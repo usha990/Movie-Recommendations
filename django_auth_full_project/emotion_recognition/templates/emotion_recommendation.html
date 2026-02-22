@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ emotion }}-Based Movie Recommendations</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+    }
+    h2 {
+      color: #1db954;
+    }
+    .movie-card {
+      display: inline-block;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px;
+      width: 220px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    .movie-card:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h2>🎬 Recommended Movies for {{ emotion }} 😄</h2>
+
+  {% if movies %}
+    {% for movie in movies %}
+      <div class="movie-card">
+        <h3>{{ movie.title }}</h3>
+        <p><strong>Genre:</strong> {{ movie.genres }}</p>
+<p><strong>⭐ Score:</strong> {{ movie.score|floatformat:1 }}</p>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No movies found for this emotion 😢</p>
+  {% endif %}
+
+  <br><br>
+  <a href="/emotion_page/" style="color:#1db954;">Try Again</a>
+</body>
+</html>

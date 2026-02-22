@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotion Recognition | CineMatch</title>
+  <style>
+    body {
+      background-color: #141414;
+      color: #fff;
+      text-align: center;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      color: #e50914;
+      margin-top: 20px;
+    }
+
+    video {
+      border: 3px solid #333;
+      border-radius: 12px;
+      margin-top: 25px;
+      width: 420px;
+      height: 320px;
+      box-shadow: 0px 0px 15px rgba(229, 9, 20, 0.5);
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      border: none;
+      background: #e50914;
+      color: white;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #b20710;
+      transform: scale(1.05);
+    }
+
+    #emotion-result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #1db954;
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: 40px;
+      color: #777;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎭 Emotion-Based Movie Recommender</h2>
+
+  <video id="camera" autoplay></video>
+  <br>
+  <button id="capture">Detect Emotion</button>
+  <p id="emotion-result"></p>
+
+  <script>
+    // 🎥 Access user webcam
+    const video = document.getElementById('camera');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { alert("Camera access denied: " + err); });
+
+    // 🔒 Get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // 📸 Capture and send frame
+    const captureBtn = document.getElementById('capture');
+    const emotionResult = document.getElementById('emotion-result');
+
+    captureBtn.onclick = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
+      const formData = new FormData();
+      formData.append('frame', blob);
+
+      emotionResult.innerText = "Detecting emotion... Please wait 🎥";
+
+      try {
+        const res = await fetch('/detect_emotion/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrftoken },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.emotion) {
+          const mood = data.emotion.toUpperCase();
+          emotionResult.innerHTML = `Detected Emotion: <span style="color:#1db954;">${mood}</span>`;
+
+          // ⏳ Redirect after 2 seconds to recommendation page
+          setTimeout(() => {
+           window.location.href = `/recommend_by_emotion/${data.emotion}/`;
+          }, 2000);
+
+        } else {
+          emotionResult.innerText = "😕 No emotion detected. Try again!";
+        }
+      } catch (err) {
+        emotionResult.innerText = "⚠️ Error: " + err;
+      }
+    };
+  </script>
+
+  <div class="footer">
+    <p>💡 Tip: Smile, frown, or show surprise to test live emotion-based recommendations!</p>
+  </div>
+</body>
+</html>

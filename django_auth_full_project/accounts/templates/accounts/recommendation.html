@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Recommendations for User {{ user_id }}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f6f8fa; padding:30px; }
+    .container { max-width:900px; margin:0 auto; }
+    h1 { color:#222; margin-bottom:10px; }
+    .movie-card {
+      background: #fff; padding:16px; margin:12px 0; border-radius:10px;
+      box-shadow: 0 6px 18px rgba(15,15,15,0.06);
+      display:flex; gap:16px; align-items:center;
+    }
+    .movie-meta { flex:1; }
+    .title { font-size:18px; font-weight:700; margin:0 0 6px 0; }
+    .genre { font-size:13px; color:#666; margin-bottom:8px; }
+    .desc { font-size:14px; color:#333; }
+    .score { font-weight:700; color:#0b6; min-width:72px; text-align:right; }
+    .empty { color:#666; padding:20px; background:#fff; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Top Movie Recommendations — User {{ user_id }}</h1>
+    {% if recommendations %}
+      {% for movie in recommendations %}
+        <div class="movie-card">
+          <div class="movie-meta">
+            <div class="title">{{ movie.title }}</div>
+            <div class="genre">{{ movie.genre }}</div>
+            <div class="desc">{{ movie.description }}</div>
+          </div>
+          <div class="score">{{ movie.score|floatformat:2 }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No recommendations available for this user.</div>
+    {% endif %}
+  </div>
+</body>
+</html>

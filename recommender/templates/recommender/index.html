@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+  <title>CineMatch – Hybrid + Emotion-Based Movie Recommender</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      background: radial-gradient(circle at top, #1c1c1c, #0d0d0d);
+      color: #fff;
+    }
+
+    h1 {
+      color: #e50914;
+      font-size: 2.6rem;
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px rgba(229, 9, 20, 0.5);
+    }
+
+    h3, h4 { color: #e50914; }
+
+    label { display:inline-block; margin: 6px 12px 6px 0; }
+    input, button {
+      padding: 10px 14px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    input {
+      background:#333;
+      color:#fff;
+      min-width:160px;
+    }
+    button {
+      background-color: #e50914;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 2px 10px rgba(229, 9, 20, 0.3);
+    }
+    button:hover {
+      background-color: #b20710;
+      transform: translateY(-2px);
+    }
+
+    .controls {
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.05);
+      padding: 12px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    #emotion-box {
+      background: linear-gradient(145deg, #1a1a1a, #111);
+      padding: 40px;
+      border-radius: 14px;
+      margin-top: 35px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    #emotion-box h3 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    #emotion-box p {
+      color: #ccc;
+      margin-bottom: 18px;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    #emotion-box a {
+      display:inline-block;
+      padding:14px 32px;
+      background-color:#e50914;
+      color:#fff;
+      font-weight:bold;
+      border-radius:10px;
+      text-decoration:none;
+      font-size: 1.1rem;
+      transition:transform 0.3s, background-color 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      animation: pulse 1.8s infinite;
+    }
+    #emotion-box a:hover {
+      background-color:#b20710;
+      transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #out {
+      margin-top: 24px;
+      background: rgba(255,255,255,0.04);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: rgba(26,26,26,0.9);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #333;
+      text-align: left;
+    }
+    th {
+      background-color: #e50914;
+      color: #fff;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+    tr:hover { background-color: rgba(255,255,255,0.08); }
+
+    pre { background:#111; padding:12px; border-radius:6px; color:#ddd; }
+  </style>
+</head>
+
+<body>
+  <h1>🎬 CineMatch – Hybrid + Emotion-Based Movie Recommender</h1>
+
+  <div class="controls">
+    <label>User ID: <input id="user_id" type="number" value="1" min="1"/></label>
+    <label>Alpha (CF weight 0..1): <input id="alpha" type="number" step="0.1" min="0" max="1" value="0.6"/></label>
+  </div>
+
+  <div class="controls">
+    <label>Search movies:
+      <input id="q" type="text" size="40" placeholder="e.g. Toy Story"/>
+    </label><br>
+    <!-- <button onclick="getRec()">🎯 Get Hybrid Recommendations</button> -->
+    <button onclick="search()">🔍 Get Hybrid Recommendations</button>
+  </div>
+
+  <div id="emotion-box">
+    <h3>🎭 Emotion-Based Movie Recommender</h3>
+    <p>
+      Detect your <strong>live facial emotion</strong> using your webcam, and instantly
+      discover movies that fit your current mood.
+    </p>
+    <a href="{% url 'emotion_page' %}">📸 Start Emotion Detection</a>
+  </div>
+
+  <div id="out"></div>
+
+  <script>
+    function makeTable(items) {
+      if (!items || items.length === 0)
+        return '<em>No results found</em>';
+      let html = '<table><tr>';
+      html += '<th>Poster</th><th>Title</th><th>Genres</th><th>TMDB Rating</th><th>Votes</th><th>Similarity</th><th>Final Score</th>';
+      html += '</tr>';
+      items.forEach(it => {
+        html += '<tr>';
+        html += '<td><img src="' + (it.poster_url || '') + '" alt="' + (it.title || 'Movie') + '" style="width:80px;height:120px;object-fit:cover;border-radius:4px;" onerror="this.src=\'https://via.placeholder.com/80x120/333/fff?text=No+Poster\';"></td>';
+        html += '<td>' + (it.title || '') + '</td>';
+        html += '<td>' + (it.genres || '') + '</td>';
+        html += '<td>⭐ ' + (it.vote_average || 'N/A') + '</td>';
+        html += '<td>' + (it.vote_count || 0) + '</td>';
+        html += '<td>' + (it.similarity_score || 0) + '</td>';
+        html += '<td><strong>' + (it.final_score || 0) + '</strong></td>';
+        html += '</tr>';
+      });
+      html += '</table>';
+      return html;
+    }
+
+    async function getRec() {
+      const uid = document.getElementById('user_id').value || '1';
+      const alpha = document.getElementById('alpha').value || '0.6';
+      const res = await fetch(`/recommender/api/${uid}/?alpha=${encodeURIComponent(alpha)}`);
+      const data = await res.json();
+      if (data.error)
+        return document.getElementById('out').innerHTML = '<pre>' + data.error + '</pre>';
+      document.getElementById('out').innerHTML =
+        '<h4>🎯 Recommendations (User ' + data.user_id + ', α=' + data.alpha + ')</h4>' +
+        makeTable(data.recommendations);
+    }
+
+    async function search() {
+      const q = document.getElementById('q').value;
+      if (!q)
+        return document.getElementById('out').innerHTML = '<pre>Enter a search query</pre>';
+      const res = await fetch(`/recommender/search/?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.error)
+        return document.getElementById('out').innerHTML = '<pre>' + data.error + '</pre>';
+      document.getElementById('out').innerHTML =
+        '<h4>🔍 Search results for "' + data.query + '"</h4>' +
+        makeTable(data.results);
+    }
+  </script>
+</body>
+</html>

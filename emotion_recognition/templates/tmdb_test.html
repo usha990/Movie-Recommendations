@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TMDB Test</title>
+    <style>
+        body { background: #121212; color: white; font-family: Arial; padding: 20px; }
+        .movie { background: #333; padding: 15px; margin: 10px; border-radius: 8px; display: inline-block; width: 200px; }
+        img { width: 100%; border-radius: 5px; }
+        button { padding: 10px; margin: 5px; background: #1db954; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Kannada Movie Test</h1>
+    <div>
+        <button onclick="loadMovies('HAPPY')">Happy Movies</button>
+        <button onclick="loadMovies('SAD')">Sad Movies</button>
+        <button onclick="loadMovies('ANGRY')">Action Movies</button>
+        <button onclick="loadMovies('FEAR')">Horror Movies</button>
+    </div>
+    <div id="movies"></div>
+
+    <script>
+        async function loadMovies(emotion) {
+            const response = await fetch(`/emotion/api/recommendations/?emotion=${emotion}`);
+            const data = await response.json();
+            
+            const moviesDiv = document.getElementById('movies');
+            moviesDiv.innerHTML = data.recommendations.map(movie => `
+                <div class="movie">
+                    <img src="${movie.poster_url}" alt="${movie.title}">
+                    <h3>${movie.title}</h3>
+                    <p>Year: ${movie.year}</p>
+                    <p>Score: ${movie.score}</p>
+                </div>
+            `).join('');
+        }
+        
+        // Load happy movies by default
+        loadMovies('HAPPY');
+    </script>
+</body>
+</html>

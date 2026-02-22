@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineMatch - Movie Recommendations</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #141414;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            padding: 20px 4%;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e50914;
+        }
+        
+        .hero {
+            height: 70vh;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200') center/cover;
+            display: flex;
+            align-items: center;
+            padding: 0 4%;
+        }
+        
+        .hero-content h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .hero-content p {
+            font-size: 18px;
+            max-width: 500px;
+            margin-bottom: 30px;
+        }
+        
+        .user-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .user-input input {
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .btn {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #f40612;
+        }
+        
+        .content {
+            padding: 40px 4%;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .movie-row {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .movie-card {
+            min-width: 200px;
+            background: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .movie-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+        
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        .movie-info {
+            padding: 15px;
+        }
+        
+        .movie-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .movie-genre {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        
+        .movie-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .star {
+            color: #ffd700;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .error {
+            background: rgba(229, 9, 20, 0.1);
+            border: 1px solid #e50914;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">CineMatch</div>
+    </div>
+    
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Discover Your Next Favorite Movie</h1>
+            <p>Get personalized recommendations powered by advanced AI algorithms. Enter your user ID to see movies tailored just for you.</p>
+            
+            <div class="user-input">
+                <input type="number" id="userId" placeholder="Enter User ID (1-610)" min="1" max="610" value="1">
+                <button class="btn" onclick="loadRecommendations()">Get Recommendations</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div class="section">
+            <h2>Recommended For You</h2>
+            <div id="recommendationsContainer">
+                <div class="loading">Loading your personalized recommendations...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Search Results</h2>
+            <div class="user-input">
+                <input type="text" id="searchQuery" placeholder="Search for movies...">
+                <button class="btn" onclick="searchMovies()">Search</button>
+            </div>
+            <div id="searchContainer">
+                <div class="loading">Enter a movie name to search</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadRecommendations() {
+            const userId = document.getElementById('userId').value;
+            const container = document.getElementById('recommendationsContainer');
+            
+            if (!userId || userId < 1 || userId > 610) {
+                container.innerHTML = '<div class="error">Please enter a valid User ID (1-610)</div>';
+                return;
+            }
+            
+            container.innerHTML = '<div class="loading">Loading recommendations...</div>';
+            
+            try {
+                const response = await fetch(`/recommender/api/recommend/${userId}/`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                if (data.recommendations && data.recommendations.length > 0) {
+                    container.innerHTML = `
+                        <div class="movie-row">
+                            ${data.recommendations.map(movie => `
+                                <div class="movie-card">
+                                    <img src="${movie.poster_url || 'https://via.placeholder.com/200x300/333/fff?text=' + encodeURIComponent(movie.title)}" 
+                                         alt="${movie.title}" 
+                                         onerror="this.src='https://via.placeholder.com/200x300/333/fff?text=' + encodeURIComponent('${movie.title}')">
+                                    <div class="movie-info">
+                                        <div class="movie-title">${movie.title}</div>
+                                        <div class="movie-genre">${movie.genres || 'N/A'}</div>
+                                        <div class="movie-rating">
+                                            <span class="star">★</span>
+                                            <span>${movie.rating || movie.score || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="loading">No recommendations found for this user</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="error">Failed to load recommendations. Please try again.</div>';
+            }
+        }
+        
+        async function searchMovies() {
+            const query = document.getElementById('searchQuery').value.trim();
+            const container = document.getElementById('searchContainer');
+            
+            if (!query) {
+                container.innerHTML = '<div class="error">Please enter a search term</div>';
+                return;
+            }
+            
+            container.innerHTML = '<div class="loading">Searching...</div>';
+            
+            try {
+                const response = await fetch(`/recommender/api/search/?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                if (data.results && data.results.length > 0) {
+                    container.innerHTML = `
+                        <div class="movie-row">
+                            ${data.results.map(movie => `
+                                <div class="movie-card">
+                                    <img src="${movie.poster_url || 'https://via.placeholder.com/200x300/333/fff?text=' + encodeURIComponent(movie.title)}" 
+                                         alt="${movie.title}"
+                                         onerror="this.src='https://via.placeholder.com/200x300/333/fff?text=' + encodeURIComponent('${movie.title}')">
+                                    <div class="movie-info">
+                                        <div class="movie-title">${movie.title}</div>
+                                        <div class="movie-genre">${movie.genres || 'N/A'}</div>
+                                        <div class="movie-rating">
+                                            <span class="star">★</span>
+                                            <span>${movie.rating || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="loading">No movies found for your search</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="error">Search failed. Please try again.</div>';
+            }
+        }
+        
+        // Load default recommendations on page load
+        window.onload = () => {
+            loadRecommendations();
+        };
+        
+        // Allow Enter key for search
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMovies();
+            }
+        });
+        
+        // Allow Enter key for user ID
+        document.getElementById('userId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadRecommendations();
+            }
+        });
+    </script>
+</body>
+</html>

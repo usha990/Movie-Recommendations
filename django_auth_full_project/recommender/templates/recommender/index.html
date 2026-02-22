@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+  <head>
+    <title>CineMatch - Hybrid + Emotion Recommender</title>
+    <meta charset="utf-8"/>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 20px;
+        max-width: 900px;
+        margin: auto;
+        background-color: #141414;
+        color: #fff;
+      }
+
+      h2, h3, h4 {
+        color: #e50914;
+      }
+
+      input, button, select {
+        padding: 8px;
+        margin: 5px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      input, select {
+        background-color: #333;
+        color: #fff;
+      }
+
+      button {
+        background-color: #e50914;
+        color: #fff;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #b20710;
+      }
+
+      pre {
+        background: #1c1c1c;
+        padding: 12px;
+        border-radius: 6px;
+        color: #ccc;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        background-color: #1a1a1a;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      th, td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #333;
+        text-align: left;
+      }
+
+      th {
+        background-color: #e50914;
+        color: #fff;
+      }
+
+      tr:hover {
+        background-color: #333;
+      }
+
+      label {
+        display: inline-block;
+        margin: 5px 10px 5px 0;
+      }
+
+      em {
+        color: #aaa;
+      }
+
+      #emotion-box {
+        background-color: #1c1c1c;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      #emotion-result {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>CineMatch – Hybrid + Emotion-Based Movie Recommender</h2>
+
+    <div>
+      <label>User ID: 
+        <input id="user_id" type="number" value="1" min="1"/>
+      </label>
+      <label>Alpha (CF weight 0..1): 
+        <input id="alpha" type="number" step="0.1" min="0" max="1" value="0.6"/>
+      </label>
+      <label>Language:
+        <select id="language">
+          <option value="All" selected>All</option>
+          <!-- Add language filters if needed -->
+        </select>
+      </label>
+    </div>
+
+    <div style="margin-top:12px;">
+      <label>Search movies: 
+        <input id="q" type="text" size="40" placeholder="e.g. Toy Story"/>
+      </label>
+      <br>
+      <button onclick="search()">Search</button>
+      <button onclick="getRec()">Get Recommendations</button>
+    </div>
+
+    <div id="emotion-box">
+      <h3>🎭 Emotion-Based Movie Recommender</h3>
+      <p>Click below to detect your live emotion and get personalized movie suggestions.</p>
+      <button onclick="detectEmotion()">🎥 Start Emotion Detection</button>
+      <div id="emotion-result"></div>
+    </div>
+
+    <h3>Output</h3>
+    <div id="out"></div>
+
+    <script>
+      function makeTable(items) {
+        if (!items || items.length === 0) return '<em>No results</em>';
+        let html = '<table><tr>';
+        let keys = Object.keys(items[0]);
+        keys.forEach(k => html += '<th>' + k + '</th>');
+        html += '</tr>';
+        items.forEach(it => {
+          html += '<tr>';
+          keys.forEach(k => html += '<td>' + (it[k] === null ? '' : it[k]) + '</td>');
+          html += '</tr>';
+        });
+        html += '</table>';
+        return html;
+      }
+
+      async function getRec(){
+        const uid = document.getElementById('user_id').value || '1';
+        const alpha = document.getElementById('alpha').value || '0.6';
+        const lang = document.getElementById('language').value;
+        const res = await fetch(`/recommender/api/${uid}/?alpha=${alpha}&language=${lang}`);
+        if (!res.ok) {
+          document.getElementById('out').innerHTML = '<pre>Error: ' + res.status + '</pre>';
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('out').innerHTML =
+          '<h4>Recommendations (User ' + data.user_id + 
+          ', α=' + data.alpha + ', Language=' + data.language + ')</h4>' + 
+          makeTable(data.recommendations);
+      }
+
+      async function search(){
+        const q = document.getElementById('q').value;
+        const lang = document.getElementById('language').value;
+        if (!q) { 
+          document.getElementById('out').innerHTML = '<pre>Enter a search query</pre>'; 
+          return; 
+        }
+        const res = await fetch(`/recommender/search/?q=`+encodeURIComponent(q)+`&language=${lang}`);
+        if (!res.ok) {
+          document.getElementById('out').innerHTML = '<pre>Search error: ' + res.status + '</pre>';
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('out').innerHTML =
+          '<h4>Search results for "' + data.query + '" (Language=' + data.language + ')</h4>' + 
+          makeTable(data.results);
+      }
+
+      async function detectEmotion(){
+        const resultDiv = document.getElementById('emotion-result');
+        resultDiv.innerHTML = '<em>Detecting emotion... please wait 🎥</em>';
+        try {
+          // ✅ Correct endpoint (matches Django views.py)
+          const res = await fetch('/detect_emotion/');
+          if (!res.ok) {
+            resultDiv.innerHTML = '<pre>Emotion detection failed: ' + res.status + '</pre>';
+            return;
+          }
+          const data = await res.json();
+          if (data.emotion) {
+            resultDiv.innerHTML = 
+              '<h4>Detected Emotion: ' + data.emotion + '</h4>' +
+              '<p>Redirecting to your personalized recommendations...</p>';
+            // ✅ Redirect to emotion-based recommendation page
+            setTimeout(() => {
+              window.location.href = `/recommend_by_emotion/${data.emotion.toUpperCase()}/`;
+            }, 1500);
+          } else {
+            resultDiv.innerHTML = '<p>😢 Emotion not detected. Please try again.</p>';
+          }
+        } catch (err) {
+          resultDiv.innerHTML = '<pre>Error: ' + err + '</pre>';
+        }
+      }
+    </script>
+  </body>
+</html>
