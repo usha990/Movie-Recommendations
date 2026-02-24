@@ -10,6 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-secret-key'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
+DEBUG = False
+ALLOWED_HOSTS = ['.onrender.com']
+>>>>>>> f70895e57d3ea741fb2fa253f0380ba7eb0c9c68
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
