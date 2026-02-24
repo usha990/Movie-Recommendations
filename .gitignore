@@ -1,0 +1,13 @@
+#python
+__pscache__/
+*.py[cod]
+*.sqlite3
+#virtual environment
+venv/
+env/
+#static files
+staticfiles/
+#vs code
+.vscode/
+#Mac
+.DS_Store
