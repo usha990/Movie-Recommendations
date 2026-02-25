@@ -8,10 +8,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-secret-key'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
 DEBUG = False
-ALLOWED_HOSTS = ['.onrender.com']
+ALLOWED_HOSTS = ['movie-recommendations.onrender.com']
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,8 +61,8 @@ WSGI_APPLICATION = 'auth_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_auth_db',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR'db.sqlite3',
         'USER': 'root',
         'PASSWORD': 'sinchu@123',
         'HOST': 'localhost',
