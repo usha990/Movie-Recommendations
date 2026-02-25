@@ -62,11 +62,8 @@ WSGI_APPLICATION = 'auth_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR'db.sqlite3',
-        'USER': 'root',
-        'PASSWORD': 'sinchu@123',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        
     }
 }
 
