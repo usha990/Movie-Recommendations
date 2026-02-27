@@ -15,7 +15,11 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 import random
+from fer import FER
+import cv2
 from .recommendation import hybrid_recommend
+
+detector=FER(mtcnn=True)
 
 def register_view(request):
     if request.method == "POST":
